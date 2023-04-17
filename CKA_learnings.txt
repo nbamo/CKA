@@ -1,0 +1,299 @@
+Linux Foundation Courses
+Application Development
+AI/Machine Learning
+Blockchain
+Cloud and Containers
+Cybersecurity
+DevOps and Site Reliability
+Embedded Development
+Linux Kernel Development
+Networking
+Open Source Best Practices
+System Administration
+System Engineering
+Web Development
+
+Notes
+Cluster of machines acting as base infrastructure to run containers, launch on worker nodes, watch and replace as required, rolling updates and easy roll backs, 
+and tear down. 
+All these actions require flexible, scalable, and easy-to-use network, and storage.
+Applications in the containers need to be written and re-written to be trully transient (ie last for a short time)
+
+Other Solutions to Manage Containerized Applications are:
+- Docker Swarm
+- Apache Mesos - multi level scheduler for data cluster
+- Nomad
+- Rancher
+What distinguishes K8s from others is its heritage
+Inspired by Borg - international system used by Google
+
+K8s Architecture
+every Node running containers would have :
+-Kubelet
+-Kube-proxy
+
+Control Plane:
+-Kube Controller Manager
+-Kube-Scheduler
+-kube-apiserver
+-etcd
+
+Talked to through API call (curl) and kubectl
+
+Terminologies:
+- K8s - an orchestration system to deploy and manage containers
+- Pods - consist of one or more containers which share IP address, access to storage and namespace
+- Container - usually 2 in a pod, one runs an application an the other supports th primary application
+- Namespace - used to keep object distinct from each other, for resource control and multi-tenant considerations
+- Services- leveraged by pods to communicate between pods, namespaces and outside the cluster
+- Controllers or Operators- interrogates the  kube-apiserver for a particular object state, then modify the object state to match the current state
+- Kube- Controller Managers- compile controllers
+- Deployment - the default and feature-filled operator for containers. It manages ReplicaSets
+- Replicasets - operator which creates and terminates pods according to the podSpec
+
+- Jobs and CronJobs - default operators to handle single or recurring tasks
+- Labels - used to manage many pods across hundred of nodes, are arbitrary strings which becomes part of the metadata
+can be used when checking or changing the state of objects without having to know the individual names or UIDs
+- Taints - used to discourage pod assignments
+- Toleration- resist taints when pods have it in metadata
+- Annotation - could be used by container of third party agent
+
+
+Tools
+- kubeadm and kubectl, which are very powerful and complex tools.
+ Helm, Kompose to translate Docker Compose files into Kubernetes objects
+
+
+Configuration and Installation:
+Insatll kebectl - a CLi used in k8s
+- Kubectl - allows you to create, manage, and delete all Kubernetes resources (e.g. Pods, Deployments, Services)
+- kubeadm, the community-suggested tool from the Kubernetes project, that makes installing Kubernetes easy and avoids vendor-specific installers.
+- Getting a cluster running, you need a kubeadm -init (run cp node) and kubeadm join (run worker node) and your cluster bootstraps itself
+- kubespray or kops, are used to create a Kubernetes cluster on AWS nodes.
+- Kubectl uses  $HOME/.kube/config as a configuration file.
+- A context is a combination of a cluster and user credentials.
+- &Home/.kube/config file contains all k8s endpoints, credentials and contexts used 
+- These parameters can be passed on CLI or can switch the shell btw contexts with command:
+$ kubectl config use-context foobar
+
+note: This is handy when going from a local environment to a cluster in the cloud, or from one cluster to another, such as from development to production.
+to create network:
+$ kubectl create -f ht‌tps://git.io/weave-kube
+- UPGRADE CLUSTER USING THE: kubeadm upgrade command.
+plan, apply, diff/ apply --dry-run, node
+
+Ugrade Steps:
+General upgrade process:
+
+Update the software
+Check the software version
+Drain the control plane
+View the planned upgrade
+Apply the upgrade
+Uncordon the control plane to allow pods to be scheduled.
+Detailed steps can be found in the Kubernetes documentation: Upgrading kubeadm clusters.
+
+Pod Networking CHOICES;
+- cALICO - Layer 3 network, communicates without IP encapsulation, used in production with software as k8s, openshift.
+ it scales
+- Flannel - A layer 3 IPV4 network, btw nodes of a cluster. Focused on traffic btw hosts, uses backend mechanism such as VXLAN
+- Kube-Router - featured-filled single binary
+- Cilium - newer but incredibly powerful, used by major cloud provider, it is considered a service mesh
+Once you want to deploy on a cluster of servers (physical or virtual), you will have many choices to make, just like with any other distributed system:
+
+Which provider should I use? A public or private cloud? Physical or virtual?
+Which operating system should I use? Kubernetes runs on most operating systems (e.g. Debian, Ubuntu, CentOS, etc.), plus on container-optimized OSes (e.g. CoreOS, Atomic).
+Which networking solution should I use? Do I need an overlay?
+Where should I run my etcd cluster?
+Can I configure Highly Available (HA) head nodes?
+- To learn more about how to choose the best options, you can read the Getting Started documentation page.
+with systemd becoming dominant init system in linux, k8s components will end up being run as systemd unit files in most cases or they will run via a bubelet running on the head node (kubeadm)
+
+Main Deployment Configurations
+- Single node
+- Single head node, multiple workers
+- multiple head nodes with HA, multiple workers
+- HA etcd, HA head nodes, multiple workers
+
+Installing K8s with Golang:
+$ cd $GOPATH
+$ git clone ht‌tps://github.com/kubernetes/kubernetes
+$ cd kubernetes
+$ make
+
+Exercise :Grow Cluster
+Using the same process as before connect to a second node. If attending an instructor-led class session, use the same.pemkey and a new IP provided by the instructor to access the new node.  Giving a different title or color to the newterminal window is probably a good idea to keep track of the two systems. The prompts can look very similar.
+2.student@worker: ̃
+$ sudo -i
+3.root@worker: ̃# apt-get update && apt-get upgrade -y
+<If asked allow services to restart and keep the local version of software>
+4.  Install the containerd engine, starting with dependent software.root@worker: ̃
+# sudo apt install curl apt-transport-https vim git wget gnupg2 \
+software-properties-common lsb-release ca-certificates uidmap -y
+root@worker: ̃# sudo swapoff -a
+root@worker: ̃# sudo modprobe overlay
+root@worker: ̃# sudo modprobe br_netfilter
+root@worker: ̃# cat << EOF | tee /etc/sysctl.d/kubernetes.confnet.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+EOF
+root@worker: ̃# sudo sysctl --system
+root@worker: ̃# sudo mkdir -p /etc/apt/keyrings
+root@worker: ̃# curl -fsSL https://download.docker.com/linux/ubuntu/gpg \| sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+root@worker: ̃# echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \https://download.docker.com/linux/ubuntu \$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+root@worker: ̃# apt-get update &&  apt-get install containerd.io -y
+root@worker: ̃# containerd config default | tee /etc/containerd/config.toml
+root@worker: ̃# sed -e's/SystemdCgroup = false/SystemdCgroup = true/g'-i /etc/containerd/config.toml
+root@worker: ̃# systemctl restart containerd
+
+
+K8s Architecture
+Kubernetes has the following main components:
+
+Control plane(s) and worker node(s)
+Operators
+Services
+Pods of containers
+Namespaces and quotas
+Network and policies
+Storage.
+
+When a cluster is started running kubeadm, it starts all pods in /etc/kubernetes/manifests
+- kube api-server - central accepts and process all api calls, and speaks directly to etcd. 
+It validates and configures data for API objects, and services REST operations
+Starting as a beta feature in v1.18, the Konnectivity service provides the ability to separate user-initiated traffic from server-initiated traffic.
+
+
+- kube-scheduler : uses an algorithm to determine which node will host a Pod of containers.
+- Etcd Database: The state of the cluster, networking, and other persistent information is kept in an etcd database, or, more accurately, a b+tree key-value store.
+Simultaneous requests to update a value all travel via the kube-apiserver, which then passes along the request to etcd in a series. The first request would update the database. The second request would no longer have the same version number, in which case the kube-apiserver would reply with an error 409 to the requester. There is no logic past that response on the server side, meaning the client needs to expect this and act upon the denial to update. 
+409 error - version number
+it is, the persistent state of the entire cluster must be protected and secured
+Before upgrades or maintenance, you should plan on backing up etcd. 
+***The etcdctl command allows for snapshot save and snapshot restore.
+- kube-controller-manager is a core control loop daemon which interacts with the kube-apiserver to determine the state of the cluster. 
+
+There are several operators in use, such as endpoints, namespace, and replication. 
+- 
+-the cloud-controller-manager (ccm) interacts with agents outside of the cloud. It handles tasks once handled by kube-controller-manager. This allows faster changes without altering the core Kubernetes control process. Each kubelet must use the --cloud-provider-external settings passed to the binary. You can also develop your own ccm, which can be deployed as a daemonset as an in-tree deployment or as a free-standing out-of-tree installation. The cloud-controller-manager is an optional agent which takes a few steps to enable.
+
+Depending on which network plugin has been chosen, there may be various pods to control network traffic. To handle DNS queries, Kubernetes service discovery, and other functions, the CoreDNS server has replaced kube-dns. Using chains of plugins, one of many provided or custom written, the server is easily extensible.
+
+
+Worker nodes
+- Kubelet
+- Kube-proxy - network btw containers, using IPtables. Make use of userspace mode, in wc it monitors services and endpoints, using random traffic via ipvs.
+a network pligin such as calico-node maybe found demanding on the pliugin to use.
+Each node could run a different engine. Supervisord, is a lightweight process monitor used in traditional linux env't to monitor and notify about other processes. in a non systemd cluster, this daemon can be used to monitor both the bubelet and docker processes. it will try to restart them if they fail and log events.
+Kubernetes does not have cluster-wide logging yet. Fluentd is used to provide unified logging layer for the cluster, which filters, buffers and routes messages.
+Cluster wide metrics is another area with limited functionality.
+The metrics-server SIG provides basic node and pod CPU and memory utilization.
+
+Kubelet
+the kubelet systemd process is the heavy lifter for changes and configuration on worker nodes. it accepts the API calls for Pod specifications (a PodSpec is a JSON or YAML file that describe a pod). it will work to configure the local node until the specification has been met.
+
+if a pod require access to storage, secrets or ConfigMaps, the kubelet ensure access or creation.
+it also send back status to the kube-apiserver for eventual persistence
+- It :
+Uses PodSpec
+Mount volumes to Pod
+Passes request to local container engine
+Reports status of pods and nodes to cluster
+Download secrets
+Kubelet calls other components such as the Topology Manager, which uses hints from other components to configure topology-aware resource NUMA assignments such as for CPU and hardware accelerators. As an alpha feature, it is not enabled by default
+
+
+Operators
+Operators are otherwise known as controllers or watch loop
+A simplified view of an operator is an agent or informer and a downstream stor.
+the operator is used to create or modify some object until it matches the specification.
+
+A workqueue uses a key to hand out tasks to various workers.
+The standard Bo work queues of rate limiting, delayed and time queue are typically used.
+
+endpoints
+Namespace
+serviceaccounts
+are operators maning resources in pods
+Deployments manage ReplicaSets
+
+Service Operators
+A service is an operator wc listens to the endpoint operator to provide a persistent IP for Pods.
+Pods have ephemeral IP addresses chosen from a pool.
+- the service operator send messages via the kube apiserver wc forwards settings to kube-proxy on every node as well as the network plugin such as calico-kube-controllers.
+- A service also handles access policies for inbound requests, useful for resource control, as well as for security.
+it :
+connects pods together
+expose pod to the internet
+decouple settings
+define Pod access policy
+
+Pods
+There is only one IP address per Pod, for almost every network plugin. If there is more than one container in a pod, they must share the IP. To communicate with each other, they can either use IPC, the loopback interface, or a shared filesystem.
+There is only one IP address per Pod, for almost every network plugin. If there is more than one container in a pod, they must share the IP. To communicate with each other, they can either use IPC, the loopback interface, or a shared filesystem.
+While Pods are often deployed with one application container in each, a common reason to have multiple containers in a Pod is for logging.
+Rewrite Legacy ApplicationsMoving legacy applications to Kubernetes often brings up the question if the application should be containerized as is, or rewritten as a transient, decoupled microservice. The cost and time of rewriting legacy applications can be high, but there is also value to leveraging the flexibility of Kubernetes.
+ bus (monolithic legacy application) to a scooter (transient, decoupled microservices).
+
+
+Container
+Resource Management
+occur in the spec of pod e.g :
+resources:
+  limits: 
+    cpu: "1"
+    memory: "4Gi" 
+  requests:
+    cpu: "0.5"
+    memory: "500Mi"
+
+OR Using the ResourceQuota Object
+A beta feature in v1.12 uses the scopeSelector field in the quota spec to run a pod at a specific priority if it has the appropriate priorityClassName in its pod spec.
+
+Init Containers
+Standard containers are sent to the container engine at the same time, and may start in any order. LivenessProbes, ReadinessProbes, and StatefulSets can be used to determine the order, but can add complexity.
+ Another option can be an Init container
+ EngineeringThe code below will run the init container until the ls command succeeds; then the database container will start.
+
+spec:
+  containers:
+  - name: main-app
+    image: databaseD 
+  initContainers:
+  - name: wait-database
+    image: busybox
+    command: ['sh', '-c', 'until ls /db/dir ; do sleep 5; done; '] 
+
+Architectural Review
+
+Creating a deployment with command:
+e.g 
+e.g 
+kubectl create deploy test1 --image=httpd --v=10
+to check different operators:
+eg. kubectl get deploy,rs,pod
+to check all pods and Ip address : kubectl get pod -o wide
+
+A pod represents a group of co-located containers with some associated 
+data volumes. All containers in a pod share the same network namespace.
+
+Containers
+- There are least 3 containers in a single pod, that is;
+-the App
+-Logger 
+-Pause
+The Pause container is not seen from within Kubernetes, 
+but can be seen using docker and crictl.
+
+Networking:
+The three main networking challenges to solve in a container orchestration system are:
+
+- Coupled container-to-container communication (solved by the pod concept).
+- Pod-to-pod communication.
+- External-to-pod communication (solved by the services concept, 
+which we will discuss later).
+Kubernetes expects the network configuration to enable pod-to-pod communication 
+to be available; it will not do it for you.
+
+What really sets Kubernetes apart is its features oriented towards fault-tolerance, 
+self-discovery, and scaling, coupled with a mindset that is purely API-driven.
