@@ -297,3 +297,72 @@ to be available; it will not do it for you.
 
 What really sets Kubernetes apart is its features oriented towards fault-tolerance, 
 self-discovery, and scaling, coupled with a mindset that is purely API-driven.
+
+RESTful
+kubectl makes API calls on your behalf, responding to typical HTTP verbs (GET, POST, DELETE). 
+You can also make calls externally, using curl or other program. With the appropriate certificates and keys,
+ you can make requests, or pass JSON files to make configuration changes. See the following command:   
+
+$ curl --cert userbob.pem --key userBob-key.pem \  
+--cacert /path/to/ca.pem \   
+https://k8sServer:6443/api/v1/pods 
+
+The ability to impersonate other users or groups, subject to RBAC configuration, 
+allows a manual override authentication. This can be helpful for debugging authorization policies of other users
+Checking Access
+While there is more detail on security in a later chapter, it is helpful to check the current authorizations, both as an administrator, as well as another user. The following shows what user bob could do in the default namespace and the developer namespace, using the auth can-i subcommand to query (commands and outputs): 
+
+$ kubectl auth can-i create deployments
+yes 
+
+$ kubectl auth can-i create deployments --as bob
+no 
+
+$ kubectl auth can-i create deployments --as bob --namespace developer
+yes 
+
+There are currently three APIs which can be applied to set who and what can be queried:
+
+SelfSubjectAccessReview​
+Access review for any user, helpful for delegating to others. 
+
+
+Optimistic Concurrency
+
+
+
+LocalSubjectAccessReview
+​Review is restricted to a specific namespace.
+
+SelfSubjectRulesReview​
+A review which shows allowed actions for a user within a particular namespace. 
+The use of reconcile allows a check of authorization necessary to create an object from a file. No output indicates the creation would be allowed.
+
+Kubernetes uses the resourceVersion value to determine API updates and implement optimistic concurrency. In other words, an object is not locked from the time it has been read until the object is written. 
+Instead, upon an updated call to an object, the resourceVersion is checked, and a 409 CONFLICT is returned, should the number have changed. The resourceVersion is currently backed via the modifiedIndex parameter in the etcd database, and is unique to the namespace, kind, and server. Operations which do not change an object, such as WATCH or GET, do not update this value.
+
+Kubernetes exposes resources via RESTful API calls, which allows all resources to be managed via HTTP, JSON or even XML, the typical protocol being HTTP. The state of the resources can be changed using standard HTTP verbs (e.g. GET, POST, PATCH, DELETE, etc.).
+
+There are four namespaces when cluster is initially built, named:
+- default
+- kube-node-lsb_release
+- kube-public
+- kube-system
+Should you want to see all the resources on a system, you must pass the --all-namespaces option to the kubectl command.
+
+
+Table: List of API Resources
+all	events (ev)	podsecuritypolicies (psp)
+certificatesigningrequests (csr)	horizontalpodautoscalers (hpa)	podtemplates
+clusterrolebindings	ingresses (ing)	replicasets (rs)
+clusterroles	jobs	replicationcontrollers (rc)
+clusters (valid only for federation apiservers)	limitranges (limits)	resourcequotas (quota)
+componentstatuses (cs)	namespaces (ns)	rolebindings
+configmaps (cm)	networkpolicies (netpol)	roles
+controllerrevisions	nodes (no)	secrets
+cronjobs	persistentvolumeclaims (pvc)	serviceaccounts (sa)
+customresourcedefinition (crd)	persistentvolumes (pv)	services (svc)
+daemonsets (ds)	poddisruptionbudgets (pdb)	statefulsets
+deployments (deploy)	podpreset	storageclasses
+endpoints (ep)	pods (po)	
+
