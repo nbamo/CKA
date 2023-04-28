@@ -1,0 +1,81 @@
+# To remove a node from cluster first use:
+  kubectl delete node <node-name>   # This will cause pods to be evacuated. Then, use:
+  kubeadm reset   # to remove cluster-specific information.
+# To view CPU, memory, and other resource usage, requests and limits use
+  kubectl describe node <node-name>
+# To create a deployment with general image;
+  kubectl create deploy <deploy_name> --image=httpd --v=10
+# create file low-resource-range.yaml in low-usage-limit namespace
+  kubectl --namespace=low-usage-limit  \create -f low-resource-range.yaml
+# copy file to another file
+  cp hog.yaml hog2.yaml
+
+# To set replicas in a deployment
+  kubectl scale --replicas=0 deployment/<pod name> --namespace=<namespace>
+# With the appropriate certificates and keys, you can make requests, or pass JSON files to make configuration changes
+# he ability to impersonate other users or groups, subject to RBAC configuration, allows a manual override authentication. This can be helpful for debugging authorization policies of other users.
+$ curl --cert userbob.pem --key userBob-key.pem \  
+--cacert /path/to/ca.pem \   
+https://k8sServer:6443/api/v1/pods 
+# To check access
+$ kubectl auth can-i create deployments
+- yes 
+
+$ kubectl auth can-i create deployments --as bob
+- no 
+
+$ kubectl auth can-i create deployments --as bob --namespace developer
+- yes 
+# For example, to annotate only Pods within a namespace, you can overwrite the annotation, and finally delete it. See the following commands:
+$ kubectl annotate pods --all description='Production Pods' -n prod 
+
+$ kubectl annotate --overwrite pod webpod description="Old Production Pods" -n prod 
+
+$ kubectl -n prod annotate pod webpod description-
+# creating a pod from file, get yaml or json
+$ kubectl create -f simple.yaml 
+
+$ kubectl get pods 
+
+$ kubectl get pod firstpod -o yaml 
+
+$ kubectl get pod firstpod -o json
+# Check pods with verbosity
+  kubectl --v=10 get pods firstpod
+# The basic server information, with redacted TLS certificate information, can be found in the output of the following command: 
+$ kubectl config view
+# set credentials in config that is username and password
+  kubectl config set-credentials
+$ kubectl get ns
+
+$ kubectl create ns linuxcon
+
+$ kubectl describe ns linuxcon
+
+$ kubectl get ns/linuxcon -o yaml
+
+$ kubectl delete ns/linuxcon
+$ kubectl edit ns linuxcon
+
+# you can access the logs of a container, exec into it, and watch changes to it with the following endpoints: 
+$ curl --cert /tmp/client.pem --key /tmp/client-key.pem \
+--cacert /tmp/ca.pem -v -XGET \ 
+ ht‌tps://10.128.0.3:6443/api/v1/namespaces/default/pods/firstpod/log
+
+ #This would be the same as the following. If the container does not have any standard out, there would be no logs:
+$ kubectl logs firstpod
+#There are other calls you could make, following the various API groups on your cluster:
+GET /api/v1/namespaces/{namespace}/pods/{name}/exec
+
+GET /api/v1/namespaces/{namespace}/pods/{name}/log
+
+GET /api/v1/watch/namespaces/{namespace}/pods/{name}
+
+
+
+
+  
+
+
+
+
